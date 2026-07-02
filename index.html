@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PresenceHub - Aplikasi Realtime User Online/Offline Tracker">
+    <title>PresenceHub — Realtime Presence Tracker</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ============================================ -->
+    <!-- LOADING SCREEN                                -->
+    <!-- ============================================ -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">PresenceHub</span>
+            </div>
+            <div class="loading-spinner"></div>
+            <p class="loading-message">Menghubungkan ke server...</p>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- AUTH SECTION - Login & Register               -->
+    <!-- ============================================ -->
+    <section id="auth-section" class="auth-section hidden">
+        <!-- Animated background grid -->
+        <div class="bg-grid"></div>
+        <div class="bg-glow bg-glow-1"></div>
+        <div class="bg-glow bg-glow-2"></div>
+
+        <div class="auth-container">
+            <!-- Logo -->
+            <div class="auth-logo">
+                <span class="logo-icon">⚡</span>
+                <h1 class="logo-text">PresenceHub</h1>
+                <p class="logo-subtitle">Realtime User Presence Tracker</p>
+            </div>
+
+            <!-- Auth Card -->
+            <div class="auth-card glass-card">
+                <!-- Tab Toggle -->
+                <div class="auth-tabs">
+                    <button id="btn-tab-login" class="auth-tab active" onclick="switchTab('login')">Masuk</button>
+                    <button id="btn-tab-register" class="auth-tab" onclick="switchTab('register')">Daftar</button>
+                    <div class="tab-indicator" id="tab-indicator"></div>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                            <input type="email" id="login-email" placeholder="nama@email.com" required autocomplete="email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                            <input type="password" id="login-password" placeholder="Masukkan password" required autocomplete="current-password">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="btn-login">
+                        <span class="btn-text">Masuk</span>
+                        <span class="btn-loader hidden"></span>
+                    </button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="register-form" class="auth-form hidden" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label for="register-name">Nama Lengkap</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            <input type="text" id="register-name" placeholder="Nama lengkap Anda" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                            <input type="email" id="register-email" placeholder="nama@email.com" required autocomplete="email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Password</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                            <input type="password" id="register-password" placeholder="Minimal 6 karakter" required minlength="6" autocomplete="new-password">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="btn-register">
+                        <span class="btn-text">Daftar Akun</span>
+                        <span class="btn-loader hidden"></span>
+                    </button>
+                </form>
+
+                <!-- Error Message -->
+                <div id="auth-error" class="auth-error hidden"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- DASHBOARD SECTION                             -->
+    <!-- ============================================ -->
+    <section id="dashboard-section" class="dashboard-section hidden">
+        <!-- Background -->
+        <div class="bg-grid"></div>
+        <div class="bg-glow bg-glow-1"></div>
+        <div class="bg-glow bg-glow-2"></div>
+
+        <!-- Header / Navbar -->
+        <header class="dashboard-header glass-card">
+            <div class="header-left">
+                <span class="logo-icon-sm">⚡</span>
+                <h1 class="header-title">PresenceHub</h1>
+            </div>
+            <div class="header-right">
+                <div class="current-user-info">
+                    <div class="current-user-avatar" id="current-user-avatar">U</div>
+                    <div class="current-user-details">
+                        <span class="current-user-name" id="current-user-name">User</span>
+                        <span class="current-user-status">
+                            <span class="status-dot online"></span>
+                            Online
+                        </span>
+                    </div>
+                </div>
+                <button class="btn-logout" id="btn-logout" onclick="handleLogout()" title="Keluar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span>Keluar</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-card glass-card">
+                <div class="stat-icon total">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div class="stat-details">
+                    <span class="stat-number" id="stat-total">0</span>
+                    <span class="stat-label">Total User</span>
+                </div>
+            </div>
+            <div class="stat-card glass-card">
+                <div class="stat-icon online">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <div class="stat-details">
+                    <span class="stat-number" id="stat-online">0</span>
+                    <span class="stat-label">Online</span>
+                </div>
+            </div>
+            <div class="stat-card glass-card">
+                <div class="stat-icon offline">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                    </svg>
+                </div>
+                <div class="stat-details">
+                    <span class="stat-number" id="stat-offline">0</span>
+                    <span class="stat-label">Offline</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <!-- User List -->
+            <div class="users-panel glass-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        Daftar User
+                    </h2>
+                    <!-- Filter Buttons -->
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all" onclick="filterUsers('all')">Semua</button>
+                        <button class="filter-btn" data-filter="online" onclick="filterUsers('online')">Online</button>
+                        <button class="filter-btn" data-filter="offline" onclick="filterUsers('offline')">Offline</button>
+                    </div>
+                </div>
+
+                <!-- User Grid -->
+                <div class="users-grid" id="users-grid">
+                    <!-- User cards will be rendered here by JavaScript -->
+                    <div class="empty-state" id="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        <p>Belum ada user lain yang terdaftar</p>
+                        <span>Ajak teman untuk bergabung!</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Log / Notifications Panel -->
+            <div class="activity-panel glass-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        Aktivitas Terkini
+                    </h2>
+                    <button class="btn-clear-activity" onclick="clearActivity()" title="Bersihkan">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="activity-list" id="activity-list">
+                    <div class="activity-empty" id="activity-empty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        <p>Belum ada aktivitas</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- TOAST NOTIFICATION CONTAINER                  -->
+    <!-- ============================================ -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- ============================================ -->
+    <!-- FIREBASE SDK (v9 Compat via CDN)              -->
+    <!-- ============================================ -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <!-- App Scripts -->
+    <script src="firebase-config.js"></script>
+    <script src="app.js"></script>
+
+</body>
+</html>
