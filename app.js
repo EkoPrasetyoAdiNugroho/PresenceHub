@@ -59,10 +59,8 @@ function escapeHtml(str) {
 // Menghasilkan warna konsisten berdasarkan string
 // ============================================
 const avatarColors = [
-    '#6c63ff', '#00d4aa', '#ff6b6b', '#feca57', 
-    '#48dbfb', '#ff9ff3', '#54a0ff', '#5f27cd',
-    '#01a3a4', '#f368e0', '#ff6348', '#2ed573',
-    '#3742fa', '#ff4757', '#7bed9f', '#70a1ff'
+    '#4D94FF', '#FF4D4D', '#4DFF88', '#FFD11A', 
+    '#FF66B2', '#00E6CC', '#B266FF', '#FF9933'
 ];
 
 function getAvatarColor(str) {
@@ -771,13 +769,25 @@ document.addEventListener('click', (e) => {
 function updateProfileUI(user) {
     const name = user.displayName || user.email.split('@')[0];
     const initials = getInitials(name);
+    const color = getAvatarColor(name);
 
-    currentUserName.textContent = name;
-    currentUserAvatar.textContent = initials;
+    if (currentUserName) currentUserName.textContent = name;
+    if (currentUserAvatar) {
+        currentUserAvatar.textContent = initials;
+        currentUserAvatar.style.background = color;
+    }
+    
+    const dropdownAvatar = document.getElementById('dropdown-avatar');
+    if (dropdownAvatar) {
+        dropdownAvatar.textContent = initials;
+        dropdownAvatar.style.background = color;
+    }
 
-    document.getElementById('dropdown-user-name').textContent = name;
-    document.getElementById('dropdown-user-email').textContent = user.email;
-    document.getElementById('dropdown-avatar').textContent = initials;
+    const dropdownName = document.getElementById('dropdown-user-name');
+    if (dropdownName) dropdownName.textContent = name;
+    
+    const dropdownEmail = document.getElementById('dropdown-user-email');
+    if (dropdownEmail) dropdownEmail.textContent = user.email;
 }
 
 // ============================================
@@ -829,7 +839,6 @@ function switchView(view) {
     currentView = view;
     document.getElementById('view-dashboard').classList.toggle('hidden', view !== 'dashboard');
     document.getElementById('view-chat').classList.toggle('hidden', view !== 'chat');
-    document.querySelector('.stats-bar').classList.toggle('hidden', view !== 'dashboard');
 
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.view === view);
@@ -1002,7 +1011,7 @@ function listenToChat() {
             const chatEmpty = document.getElementById('chat-empty');
             if (chatEmpty) {
                 chatEmpty.innerHTML = '<p>Gagal memuat pesan</p><span>Periksa koneksi internet Anda</span>';
-                chatEmpty.classList.remove('hidden');
+                chatEmpty.classList.add('hidden');
             }
         });
 }
