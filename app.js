@@ -1143,6 +1143,9 @@ auth.onAuthStateChanged(async (user) => {
         // Setup Firebase Presence (Materi Pekan 3b)
         setupPresence(user);
 
+        // Hapus chat global yang lebih tua dari 1 hari (24 Jam)
+        cleanupOldChats();
+
         // Mulai mendengarkan perubahan data secara realtime
         listenToUsers();
         listenToStatuses();
@@ -1152,6 +1155,7 @@ auth.onAuthStateChanged(async (user) => {
         showDashboardView();
 
     } else {
+
         // ====== USER BELUM LOGIN ======
         currentUser = null;
         allUsers = {};
@@ -1220,3 +1224,35 @@ window.addEventListener('beforeunload', () => {
 console.log('%c⚡ PresenceHub', 'font-size: 20px; font-weight: bold; color: #6c63ff;');
 console.log('%cRealtime User Presence Tracker', 'font-size: 12px; color: #00d4aa;');
 console.log('%cAplikasi Komputasi Bergerak - Kelompok 3', 'font-size: 11px; color: #888;');
+
+// ============================================
+// CLEANUP SYSTEM
+// Menghapus pesan chat global yang sudah lebih dari 24 jam
+// ============================================
+async function cleanupOldChats() {
+    try {
+        const ONE_DAY_MS = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
+        const cutoffTime = Date.now() - ONE_DAY_MS;
+        
+        // Ambil pesan global yang lebih lama dari waktu cutoff
+        const oldMessagesSnapshot = await db.collection('chat')
+            .where('clientTimestamp', '<', cutoffTime)
+            .get();
+            
+        if (oldMessagesSnapshot.empty) {
+            return; // Tidak ada pesan lama
+        }
+        
+        // Gunakan batch untuk menghapus banyak dokumen sekaligus
+        const batch = db.batch();
+        oldMessagesSnapshot.docs.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+        
+        await batch.commit();
+        console.log(`Berhasil menghapus ${oldMessagesSnapshot.size} pesan lama (lebih dari 1 hari)`);
+        
+    } catch (error) {
+        console.error('Gagal menghapus pesan lama:', error);
+    }
+}
