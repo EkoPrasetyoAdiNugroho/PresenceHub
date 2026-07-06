@@ -132,6 +132,25 @@ input:focus, textarea:focus {
     transform: translate(-2px, -2px);
 }
 
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 16px;
+    width: 24px;
+    height: 24px;
+    color: var(--text-secondary);
+    pointer-events: none;
+}
+
+.input-wrapper input {
+    padding-left: 48px;
+}
+
 /* ============================================
    LOADING SCREEN
    ============================================ */
