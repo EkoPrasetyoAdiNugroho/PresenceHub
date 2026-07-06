@@ -875,8 +875,40 @@ input:focus, textarea:focus {
     .sidebar-nav { flex-direction: row; justify-content: center; gap: 16px; }
     .profile-dropdown { left: auto; right: 16px; top: 70px; bottom: auto; transform-origin: right top; }
     .app-content { padding: 16px 20px 16px 16px; height: auto; }
+    
+    /* Horizontal Bento Stats Scroll */
+    .bento-stats { 
+        display: flex; 
+        flex-wrap: nowrap; 
+        overflow-x: auto; 
+        scroll-snap-type: x mandatory; 
+        -ms-overflow-style: none; 
+        scrollbar-width: none; 
+        padding-bottom: 8px; 
+    }
+    .bento-stats::-webkit-scrollbar { display: none; }
+    .bento-card { min-width: 85%; scroll-snap-align: start; flex-shrink: 0; }
+
     .bento-grid { grid-template-columns: 1fr; }
-    .chat-container.bento-grid { grid-template-columns: 1fr; }
-    .chat-sidebar { height: 150px; min-height: 150px; border-bottom: var(--border-width) solid var(--border-color); }
-    .chat-content { border-left: none; }
+    
+    /* WhatsApp-like Chat UI on Mobile */
+    .chat-container.bento-grid { display: block; }
+    
+    /* Default: Show Contact List, Hide Chat Room */
+    .chat-sidebar { display: block; height: calc(100vh - 120px); min-height: 0; border: none; }
+    .chat-content { display: none; height: calc(100vh - 120px); border-left: none; }
+    
+    /* Active State: Hide Contact List, Show Chat Room */
+    .chat-container.chat-active .chat-sidebar { display: none; }
+    .chat-container.chat-active .chat-content { display: flex; }
+    
+    .btn-back-chat {
+        display: flex; align-items: center; justify-content: center;
+        background: transparent; border: none; cursor: pointer;
+        padding-right: 12px; color: var(--text-primary);
+    }
+}
+
+@media (min-width: 901px) {
+    .hidden-desktop { display: none !important; }
 }

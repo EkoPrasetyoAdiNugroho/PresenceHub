@@ -888,6 +888,11 @@ function openChat(roomId, partnerData) {
     activeChatRoom = roomId;
     activeChatPartner = partnerData || null;
 
+    // Mobile: Show chat room, hide contact list
+    if (window.innerWidth <= 900) {
+        document.querySelector('.chat-container').classList.add('chat-active');
+    }
+
     // Kosongkan pesan chat yang lama, tapi biarkan elemen chat-empty tetap ada
     const chatMessages = document.getElementById('chat-messages');
     
@@ -1264,4 +1269,10 @@ async function cleanupOldChats() {
     } catch (error) {
         console.error('Gagal menghapus pesan lama:', error);
     }
+}
+
+function backToChatList() {
+    document.querySelector('.chat-container').classList.remove('chat-active');
+    activeChatRoom = null;
+    activeChatPartner = null;
 }

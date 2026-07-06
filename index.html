@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Stylesheet -->
-    <link rel="stylesheet" href="style.css?v=7">
+    <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
     <script>
@@ -308,6 +308,11 @@
                     <!-- Chat Content Area -->
                     <div class="chat-content glass-card bento-panel">
                         <div class="panel-header chat-header">
+                            <button id="btn-back-chat" class="btn-back-chat hidden-desktop" onclick="backToChatList()" title="Kembali">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
+                            </button>
                             <div class="chat-header-info">
                                 <h2 class="panel-title" id="chat-room-title">Chat Global</h2>
                                 <span class="chat-online-count" id="chat-online-count">0 online</span>
@@ -385,7 +390,7 @@
 
     <!-- App Scripts -->
     <script src="firebase-config.js"></script>
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
 
 </body>
 </html>
