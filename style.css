@@ -53,7 +53,7 @@ body {
     background-image: radial-gradient(var(--text-primary) 1.5px, transparent 0);
     background-size: 24px 24px;
     color: var(--text-primary);
-    overflow: hidden;
+    overflow-x: hidden;
     width: 100%;
     height: 100%;
 }
@@ -874,17 +874,7 @@ input:focus, textarea:focus {
     .sidebar-logo { margin-bottom: 0; width: 40px; height: 40px; }
     .sidebar-nav { flex-direction: row; justify-content: center; gap: 16px; }
     .profile-dropdown { left: auto; right: 16px; top: 70px; bottom: auto; transform-origin: right top; }
-    .app-content { padding: 16px 20px 16px 16px; }
-    .bento-grid { grid-template-columns: 1fr; }
-    .chat-container.bento-grid { grid-template-columns: 1fr; }
-    .chat-sidebar { height: 150px; min-height: 150px; border-bottom: var(--border-width) solid var(--border-color); }
-    .chat-content { border-left: none; }
-}
-    .app-sidebar { width: calc(100% - 32px); height: 70px; margin: 16px; flex-direction: row; padding: 0 24px; justify-content: space-between; margin-bottom: 0; }
-    .sidebar-logo { margin-bottom: 0; width: 40px; height: 40px; }
-    .sidebar-nav { flex-direction: row; justify-content: center; }
-    .profile-dropdown { left: auto; right: 0; bottom: 80px; transform-origin: right bottom; }
-    .app-content { padding: 16px; }
+    .app-content { padding: 16px 20px 16px 16px; height: auto; }
     .bento-grid { grid-template-columns: 1fr; }
     .chat-container.bento-grid { grid-template-columns: 1fr; }
     .chat-sidebar { height: 150px; min-height: 150px; border-bottom: var(--border-width) solid var(--border-color); }
