@@ -527,8 +527,14 @@ function renderUserList() {
 // Buat elemen user card
 function createUserCard(user) {
     const card = document.createElement('div');
-    card.className = `user-card${user.isSelf ? ' is-self' : ''}`;
+    card.className = `user-card${user.isSelf ? ' is-self' : ' clickable'}`;
     card.id = `user-card-${user.uid}`;
+
+    // Klik user card untuk membuka private chat
+    if (!user.isSelf) {
+        card.onclick = () => openPrivateChat(user.uid);
+        card.title = `Chat dengan ${user.displayName}`;
+    }
 
     const color = getAvatarColor(user.uid);
     const initials = getInitials(user.displayName);
@@ -537,7 +543,6 @@ function createUserCard(user) {
 
     // Sanitasi data user untuk mencegah XSS
     const safeName = escapeHtml(user.displayName);
-    const safeEmail = escapeHtml(user.email);
 
     card.innerHTML = `
         <div class="user-avatar">
@@ -548,8 +553,8 @@ function createUserCard(user) {
         </div>
         <div class="user-info">
             <div class="user-name">${safeName}${user.isSelf ? ' (Anda)' : ''}</div>
-            <div class="user-email">${safeEmail}</div>
             ${lastSeenText ? `<div class="user-last-seen">Terakhir online: ${lastSeenText}</div>` : ''}
+            ${!user.isSelf ? '<div class="user-chat-hint">💬 Klik untuk chat</div>' : ''}
         </div>
         <div class="user-status-badge ${isOnline ? 'online' : 'offline'}">
             <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
@@ -608,10 +613,51 @@ function filterUsers(filter) {
 }
 
 // ============================================
+// SOUND NOTIFICATION
+// Efek suara saat user join/leave
+// ============================================
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function playNotificationSound(type) {
+    try {
+        if (!audioCtx) audioCtx = new AudioContext();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        gainNode.gain.value = 0.15;
+
+        if (type === 'join') {
+            // Nada naik — user bergabung
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(523, audioCtx.currentTime);
+            oscillator.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+            oscillator.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
+        } else {
+            // Nada turun — user keluar
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(587, audioCtx.currentTime);
+            oscillator.frequency.setValueAtTime(440, audioCtx.currentTime + 0.15);
+        }
+
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.35);
+    } catch (e) {
+        // Audio tidak didukung, abaikan saja
+    }
+}
+
+// ============================================
 // TOAST NOTIFICATIONS
 // Notifikasi pop-up saat user join/leave
 // ============================================
 function showToast(message, type = 'info', icon = 'ℹ️') {
+    // Mainkan efek suara saat join/leave
+    if (type === 'join' || type === 'leave') {
+        playNotificationSound(type);
+    }
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
 
@@ -703,6 +749,374 @@ function clearActivity() {
 }
 
 // ============================================
+// PROFILE DROPDOWN
+// ============================================
+function toggleProfileDropdown() {
+    const dropdown = document.getElementById('profile-dropdown');
+    const trigger = document.getElementById('profile-trigger');
+    dropdown.classList.toggle('hidden');
+    trigger.classList.toggle('open');
+}
+
+// Tutup dropdown saat klik di luar
+document.addEventListener('click', (e) => {
+    const wrapper = document.querySelector('.profile-dropdown-wrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+        document.getElementById('profile-dropdown').classList.add('hidden');
+        document.getElementById('profile-trigger').classList.remove('open');
+    }
+});
+
+// Update info di profile dropdown
+function updateProfileUI(user) {
+    const name = user.displayName || user.email.split('@')[0];
+    const initials = getInitials(name);
+
+    currentUserName.textContent = name;
+    currentUserAvatar.textContent = initials;
+
+    document.getElementById('dropdown-user-name').textContent = name;
+    document.getElementById('dropdown-user-email').textContent = user.email;
+    document.getElementById('dropdown-avatar').textContent = initials;
+}
+
+// ============================================
+// EDIT PROFILE MODAL
+// ============================================
+function openEditProfile() {
+    document.getElementById('profile-dropdown').classList.add('hidden');
+    document.getElementById('profile-trigger').classList.remove('open');
+    document.getElementById('edit-name').value = currentUser.displayName || '';
+    document.getElementById('edit-profile-modal').classList.remove('hidden');
+}
+
+function closeEditProfile() {
+    document.getElementById('edit-profile-modal').classList.add('hidden');
+}
+
+async function saveProfile(event) {
+    event.preventDefault();
+    setButtonLoading('btn-save-profile', true);
+    const newName = document.getElementById('edit-name').value.trim();
+
+    try {
+        // Update Firebase Auth profile
+        await currentUser.updateProfile({ displayName: newName });
+
+        // Update Firestore
+        await db.collection('users').doc(currentUser.uid).update({
+            displayName: newName
+        });
+
+        // Update UI
+        updateProfileUI(currentUser);
+        closeEditProfile();
+        showToast(`Nama berhasil diubah menjadi "${escapeHtml(newName)}"`, 'info', '✅');
+    } catch (error) {
+        console.error('Error saving profile:', error);
+        showToast('Gagal menyimpan profil', 'leave', '❌');
+    } finally {
+        setButtonLoading('btn-save-profile', false);
+    }
+}
+
+// ============================================
+// VIEW SWITCHING (Dashboard / Chat)
+// ============================================
+let currentView = 'dashboard';
+
+function switchView(view) {
+    currentView = view;
+    document.getElementById('view-dashboard').classList.toggle('hidden', view !== 'dashboard');
+    document.getElementById('view-chat').classList.toggle('hidden', view !== 'chat');
+    document.querySelector('.stats-bar').classList.toggle('hidden', view !== 'dashboard');
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === view);
+    });
+
+    if (view === 'chat') {
+        // Reset navbar badge saat membuka chat
+        const badge = document.getElementById('chat-badge');
+        badge.classList.add('hidden');
+        unreadNavCount = 0;
+
+        // Render contact list dan scroll chat ke bawah
+        renderChatContacts();
+        const chatMessages = document.getElementById('chat-messages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+}
+
+// ============================================
+// CHAT SYSTEM
+// Menggunakan Cloud Firestore untuk pesan
+// (Materi Pekan 2 - Realtime Listeners)
+// ============================================
+let unsubscribeChat = null;
+let unreadNavCount = 0;
+let chatInitialized = false;
+let activeChatRoom = 'global';       // 'global' atau UID user untuk private
+let activeChatPartner = null;        // Data user partner untuk private chat
+
+// Mendapatkan ID unik untuk private chat room (sorted UIDs)
+function getPrivateChatId(uid1, uid2) {
+    return [uid1, uid2].sort().join('_');
+}
+
+// Mendapatkan collection path berdasarkan chat room
+function getChatCollectionPath() {
+    if (activeChatRoom === 'global') {
+        return db.collection('chat');
+    } else {
+        const chatId = getPrivateChatId(currentUser.uid, activeChatRoom);
+        return db.collection('private_chats').doc(chatId).collection('messages');
+    }
+}
+
+// Buka chat room (global atau private)
+function openChat(roomId, partnerData) {
+    activeChatRoom = roomId;
+    activeChatPartner = partnerData || null;
+
+    // Kosongkan pesan chat yang lama, tapi biarkan elemen chat-empty tetap ada
+    const chatMessages = document.getElementById('chat-messages');
+    
+    // Hapus semua elemen dengan class 'chat-bubble' agar chat-empty tidak ikut terhapus
+    const bubbles = chatMessages.querySelectorAll('.chat-bubble');
+    bubbles.forEach(bubble => bubble.remove());
+
+    const chatEmpty = document.getElementById('chat-empty');
+    if (chatEmpty) {
+        chatEmpty.classList.remove('hidden');
+    }
+
+    // Update judul chat
+    const title = document.getElementById('chat-room-title');
+    const onlineCount = document.getElementById('chat-online-count');
+
+    if (roomId === 'global') {
+        title.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Chat Global
+        `;
+        onlineCount.style.display = '';
+        onlineCount.style.color = '';
+        updateChatOnlineCount();
+    } else {
+        const name = escapeHtml(partnerData?.displayName || 'User');
+        const isOnline = allStatuses[roomId]?.state === 'online';
+        title.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            ${name}
+        `;
+        onlineCount.textContent = isOnline ? 'Online' : 'Offline';
+        onlineCount.style.color = isOnline ? 'var(--color-online)' : 'var(--text-tertiary)';
+        onlineCount.style.display = '';
+    }
+
+    // Update active state di contact list
+    document.querySelectorAll('.chat-contact').forEach(c => {
+        c.classList.toggle('active', c.dataset.chat === roomId);
+    });
+
+    // Mulai listener untuk room ini
+    listenToChat();
+
+    // Jika belum di view chat, pindah
+    if (currentView !== 'chat') {
+        switchView('chat');
+    }
+}
+
+// Buka private chat dari klik user card
+function openPrivateChat(uid) {
+    const userData = allUsers[uid];
+    if (!userData || uid === currentUser?.uid) return;
+
+    switchView('chat');
+    openChat(uid, userData);
+}
+
+// Listen to chat messages (bekerja untuk global & private)
+function listenToChat() {
+    // Hentikan listener lama
+    if (unsubscribeChat) {
+        unsubscribeChat();
+        unsubscribeChat = null;
+    }
+
+    const collection = getChatCollectionPath();
+
+    // Query sederhana: urutkan berdasarkan clientTimestamp
+    unsubscribeChat = collection
+        .orderBy('clientTimestamp', 'asc')
+        .limitToLast(100)
+        .onSnapshot((snapshot) => {
+            const chatMessages = document.getElementById('chat-messages');
+            const chatEmpty = document.getElementById('chat-empty');
+
+            if (snapshot.empty) {
+                // Hapus bubbles lama
+                chatMessages.querySelectorAll('.chat-bubble').forEach(b => b.remove());
+                if (chatEmpty) chatEmpty.classList.remove('hidden');
+                return;
+            }
+
+            // Sembunyikan elemen kosong
+            if (chatEmpty) chatEmpty.classList.add('hidden');
+
+            // Hapus pesan lama, jangan pakai innerHTML = '' karena akan menghapus chat-empty
+            chatMessages.querySelectorAll('.chat-bubble').forEach(b => b.remove());
+
+            // Render ulang semua pesan
+            snapshot.docs.forEach((doc) => {
+                const msg = doc.data();
+                const bubble = createChatBubble(msg);
+                chatMessages.appendChild(bubble);
+            });
+
+            // Scroll ke bawah
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Badge untuk pesan baru (jika sedang di view lain)
+            if (chatInitialized && currentView !== 'chat') {
+                const changes = snapshot.docChanges();
+                const newMessages = changes.filter(c => c.type === 'added' && c.doc.data().uid !== currentUser?.uid);
+                if (newMessages.length > 0) {
+                    unreadNavCount += newMessages.length;
+                    const badge = document.getElementById('chat-badge');
+                    badge.textContent = unreadNavCount;
+                    badge.classList.remove('hidden');
+                    playNotificationSound('join');
+                }
+            }
+            chatInitialized = true;
+        }, (error) => {
+            console.error('Chat listener error:', error);
+            const chatMessages = document.getElementById('chat-messages');
+            const chatEmpty = document.getElementById('chat-empty');
+            if (chatEmpty) {
+                chatEmpty.innerHTML = '<p>Gagal memuat pesan</p><span>Periksa koneksi internet Anda</span>';
+                chatEmpty.classList.remove('hidden');
+            }
+        });
+}
+
+function createChatBubble(msg) {
+    const bubble = document.createElement('div');
+    const isSelf = msg.uid === currentUser?.uid;
+    bubble.className = `chat-bubble ${isSelf ? 'self' : 'other'}`;
+
+    // Gunakan clientTimestamp sebagai fallback
+    let timeMs = msg.clientTimestamp || Date.now();
+    if (msg.timestamp && msg.timestamp.toMillis) {
+        timeMs = msg.timestamp.toMillis();
+    }
+    const timeStr = formatTime(timeMs);
+
+    bubble.innerHTML = `
+        ${!isSelf ? `<div class="chat-sender">${escapeHtml(msg.displayName || 'User')}</div>` : ''}
+        <div class="chat-text">${escapeHtml(msg.text)}</div>
+        <div class="chat-time">${timeStr}</div>
+    `;
+    return bubble;
+}
+
+function sendChatMessage(event) {
+    event.preventDefault();
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || !currentUser) return;
+
+    input.value = '';
+
+    const collection = getChatCollectionPath();
+
+    // Tidak pakai await — kirim ke Firestore di background
+    // onSnapshot akan mendeteksi optimistic write dan langsung render pesan
+    collection.add({
+        text: text,
+        uid: currentUser.uid,
+        displayName: currentUser.displayName || 'User',
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        clientTimestamp: Date.now()
+    }).catch((error) => {
+        console.error('Error sending message:', error);
+        showToast('Gagal mengirim pesan', 'leave', '❌');
+    });
+}
+
+// Render contact list di sidebar chat
+function renderChatContacts() {
+    const list = document.getElementById('chat-contact-list');
+    if (!list) return;
+
+    // Simpan global chat button
+    const globalBtn = list.querySelector('[data-chat="global"]');
+
+    // Hapus semua contact kecuali global button
+    list.innerHTML = '';
+    if (globalBtn) {
+        list.appendChild(globalBtn);
+    } else {
+        // Recreate global button
+        const btn = document.createElement('button');
+        btn.className = `chat-contact ${activeChatRoom === 'global' ? 'active' : ''}`;
+        btn.dataset.chat = 'global';
+        btn.onclick = () => openChat('global');
+        btn.innerHTML = `
+            <div class="contact-avatar global-avatar">🌐</div>
+            <div class="contact-info">
+                <span class="contact-name">Chat Global</span>
+                <span class="contact-preview">Semua user</span>
+            </div>
+        `;
+        list.appendChild(btn);
+    }
+
+    // Tambahkan user sebagai contact (kecuali diri sendiri)
+    Object.keys(allUsers).forEach(uid => {
+        if (uid === currentUser?.uid) return;
+        const user = allUsers[uid];
+        const isOnline = allStatuses[uid]?.state === 'online';
+        const color = getAvatarColor(uid);
+        const initials = getInitials(user.displayName);
+
+        const contact = document.createElement('button');
+        contact.className = `chat-contact ${activeChatRoom === uid ? 'active' : ''}`;
+        contact.dataset.chat = uid;
+        contact.onclick = () => openChat(uid, user);
+
+        contact.innerHTML = `
+            <div class="contact-avatar" style="background: ${color}">${initials}</div>
+            <div class="contact-info">
+                <span class="contact-name">${escapeHtml(user.displayName)}</span>
+                <span class="contact-preview">${isOnline ? 'Online' : 'Offline'}</span>
+            </div>
+            <span class="contact-status-dot ${isOnline ? 'online' : 'offline'}"></span>
+        `;
+        list.appendChild(contact);
+    });
+}
+
+// Update jumlah online di chat header
+function updateChatOnlineCount() {
+    const el = document.getElementById('chat-online-count');
+    if (!el) return;
+    if (activeChatRoom !== 'global') return;
+    let count = 0;
+    Object.keys(allUsers).forEach(uid => {
+        if (allStatuses[uid]?.state === 'online') count++;
+    });
+    el.textContent = `${count} online`;
+}
+
+// ============================================
 // AUTH STATE OBSERVER
 // Mendeteksi perubahan status login
 // (Materi Pekan 1b - Firebase Authentication)
@@ -712,12 +1126,10 @@ auth.onAuthStateChanged(async (user) => {
         // ====== USER SUDAH LOGIN ======
         currentUser = user;
 
-        // Update UI header dengan info user
-        currentUserName.textContent = user.displayName || user.email;
-        currentUserAvatar.textContent = getInitials(user.displayName || user.email);
+        // Update UI header dan profile dropdown
+        updateProfileUI(user);
 
         // Pastikan data user ada di Firestore
-        // (untuk kasus login tanpa register, atau data belum ada)
         const userDoc = await db.collection('users').doc(user.uid).get();
         if (!userDoc.exists) {
             await db.collection('users').doc(user.uid).set({
@@ -734,6 +1146,7 @@ auth.onAuthStateChanged(async (user) => {
         // Mulai mendengarkan perubahan data secara realtime
         listenToUsers();
         listenToStatuses();
+        listenToChat();
 
         // Tampilkan dashboard
         showDashboardView();
@@ -745,6 +1158,10 @@ auth.onAuthStateChanged(async (user) => {
         allStatuses = {};
         previousStatuses = {};
         isFirstLoad = true;
+        chatInitialized = false;
+        activeChatRoom = 'global';
+        activeChatPartner = null;
+        currentView = 'dashboard';
 
         // Hentikan listeners
         if (unsubscribeUsers) {
@@ -754,6 +1171,10 @@ auth.onAuthStateChanged(async (user) => {
         if (statusListenerRef) {
             statusListenerRef.off();
             statusListenerRef = null;
+        }
+        if (unsubscribeChat) {
+            unsubscribeChat();
+            unsubscribeChat = null;
         }
 
         // Tampilkan halaman auth
@@ -768,6 +1189,7 @@ auth.onAuthStateChanged(async (user) => {
 setInterval(() => {
     if (currentUser && Object.keys(allUsers).length > 0) {
         renderUserList();
+        updateChatOnlineCount();
     }
 }, 30000);
 

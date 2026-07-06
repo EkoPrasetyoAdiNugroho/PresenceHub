@@ -143,25 +143,69 @@
                 <span class="logo-icon-sm">⚡</span>
                 <h1 class="header-title">PresenceHub</h1>
             </div>
+
+            <!-- Navbar Navigation -->
+            <nav class="header-nav">
+                <button class="nav-btn active" data-view="dashboard" onclick="switchView('dashboard')" title="Dashboard">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Users</span>
+                </button>
+                <button class="nav-btn" data-view="chat" onclick="switchView('chat')" title="Chat">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>Chat</span>
+                    <span class="chat-badge hidden" id="chat-badge">0</span>
+                </button>
+            </nav>
+
             <div class="header-right">
-                <div class="current-user-info">
-                    <div class="current-user-avatar" id="current-user-avatar">U</div>
-                    <div class="current-user-details">
+                <!-- Profile Dropdown -->
+                <div class="profile-dropdown-wrapper">
+                    <button class="profile-trigger" id="profile-trigger" onclick="toggleProfileDropdown()">
+                        <div class="current-user-avatar" id="current-user-avatar">U</div>
                         <span class="current-user-name" id="current-user-name">User</span>
-                        <span class="current-user-status">
-                            <span class="status-dot online"></span>
-                            Online
-                        </span>
+                        <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div class="profile-dropdown hidden" id="profile-dropdown">
+                        <div class="dropdown-header">
+                            <div class="dropdown-avatar" id="dropdown-avatar">U</div>
+                            <div class="dropdown-user-info">
+                                <span class="dropdown-user-name" id="dropdown-user-name">User</span>
+                                <span class="dropdown-user-email" id="dropdown-user-email">user@email.com</span>
+                                <span class="dropdown-user-status">
+                                    <span class="status-dot online"></span> Online
+                                </span>
+                            </div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" onclick="openEditProfile()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            Edit Profil
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item danger" onclick="handleLogout()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <polyline points="16 17 21 12 16 7"/>
+                                <line x1="21" y1="12" x2="9" y2="12"/>
+                            </svg>
+                            Keluar
+                        </button>
                     </div>
                 </div>
-                <button class="btn-logout" id="btn-logout" onclick="handleLogout()" title="Keluar">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                        <polyline points="16 17 21 12 16 7"/>
-                        <line x1="21" y1="12" x2="9" y2="12"/>
-                    </svg>
-                    <span>Keluar</span>
-                </button>
             </div>
         </header>
 
@@ -207,8 +251,10 @@
             </div>
         </div>
 
-        <!-- Main Content -->
-        <main class="dashboard-main">
+        <!-- ============================================ -->
+        <!-- VIEW: DASHBOARD (Users + Activity)           -->
+        <!-- ============================================ -->
+        <main class="dashboard-main" id="view-dashboard">
             <!-- User List -->
             <div class="users-panel glass-card">
                 <div class="panel-header">
@@ -231,7 +277,6 @@
 
                 <!-- User Grid -->
                 <div class="users-grid" id="users-grid">
-                    <!-- User cards will be rendered here by JavaScript -->
                     <div class="empty-state" id="empty-state">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -245,7 +290,7 @@
                 </div>
             </div>
 
-            <!-- Activity Log / Notifications Panel -->
+            <!-- Activity Log -->
             <div class="activity-panel glass-card">
                 <div class="panel-header">
                     <h2 class="panel-title">
@@ -273,6 +318,98 @@
                 </div>
             </div>
         </main>
+
+        <!-- ============================================ -->
+        <!-- VIEW: CHAT                                    -->
+        <!-- ============================================ -->
+        <main class="chat-main hidden" id="view-chat">
+            <!-- Chat Sidebar - Contact List -->
+            <div class="chat-sidebar glass-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        Percakapan
+                    </h2>
+                </div>
+                <div class="chat-contact-list" id="chat-contact-list">
+                    <!-- Global chat button -->
+                    <button class="chat-contact active" data-chat="global" onclick="openChat('global')">
+                        <div class="contact-avatar global-avatar">🌐</div>
+                        <div class="contact-info">
+                            <span class="contact-name">Chat Global</span>
+                            <span class="contact-preview">Semua user</span>
+                        </div>
+                    </button>
+                    <!-- Private contacts will be rendered here by JS -->
+                </div>
+            </div>
+
+            <!-- Chat Content Area -->
+            <div class="chat-content glass-card">
+                <div class="panel-header">
+                    <h2 class="panel-title" id="chat-room-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        Chat Global
+                    </h2>
+                    <span class="chat-online-count" id="chat-online-count">0 online</span>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="chat-empty" id="chat-empty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        <p>Belum ada pesan</p>
+                        <span>Mulai percakapan!</span>
+                    </div>
+                </div>
+                <form class="chat-input-area" id="chat-form" onsubmit="sendChatMessage(event)">
+                    <input type="text" id="chat-input" placeholder="Tulis pesan..." autocomplete="off" maxlength="500">
+                    <button type="submit" class="btn-send" title="Kirim">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </main>
+
+        <!-- ============================================ -->
+        <!-- EDIT PROFILE MODAL                            -->
+        <!-- ============================================ -->
+        <div class="modal-overlay hidden" id="edit-profile-modal">
+            <div class="modal-card glass-card">
+                <div class="modal-header">
+                    <h2>Edit Profil</h2>
+                    <button class="modal-close" onclick="closeEditProfile()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <form onsubmit="saveProfile(event)">
+                    <div class="form-group">
+                        <label for="edit-name">Nama Tampilan</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            <input type="text" id="edit-name" placeholder="Nama baru" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="btn-save-profile">
+                        <span class="btn-text">Simpan</span>
+                        <span class="btn-loader hidden"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
     </section>
 
     <!-- ============================================ -->
